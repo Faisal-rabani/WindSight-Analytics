@@ -28,6 +28,9 @@ def create_app(config_name: str = None) -> Flask:
     # Register root / health routes
     @app.route("/")
     @app.route("/health")
+    @app.route("/api")
+    @app.route("/api/index")
+    @app.route("/api/index.py")
     def index():
         from app.api.routes.health import health_check
         return health_check()
