@@ -35,20 +35,6 @@ def create_app(config_name: str = None) -> Flask:
         from app.api.routes.health import health_check
         return health_check()
 
-    @app.route("/debug-headers")
-    @app.route("/api/debug-headers")
-    def debug_headers():
-        from flask import request, jsonify
-        environ_subset = {
-            k: str(v) for k, v in request.environ.items()
-            if any(term in k.lower() for term in ["path", "uri", "url", "matched", "forward", "route"])
-        }
-        return jsonify({
-            "path": request.path,
-            "headers": dict(request.headers),
-            "environ_subset": environ_subset,
-        })
-
     # Register error handlers
     register_error_handlers(app)
 
