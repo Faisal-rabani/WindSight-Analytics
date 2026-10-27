@@ -16,7 +16,7 @@ from urllib.parse import parse_qs, urlencode
 class VercelRewriteMiddleware:
     """
     WSGI middleware that restores original PATH_INFO on Vercel.
-    When vercel.json rewrites /(.*) to /api/index?_path=/$1,
+    When vercel.json rewrites /:path* to /api/index?path=:path*,
     this middleware extracts the real requested path, restores PATH_INFO,
     and cleans up QUERY_STRING.
     """
@@ -24,30 +24,33 @@ class VercelRewriteMiddleware:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        # 1. Check for _path forwarded via vercel.json rewrite
         query_string = environ.get("QUERY_STRING", "")
-        if "_path=" in query_string:
+        if query_string:
             try:
                 params = parse_qs(query_string, keep_blank_values=True)
-                if "_path" in params and params["_path"]:
-                    target_path = params.pop("_path")[0]
-                    if not target_path.startswith("/"):
-                        target_path = "/" + target_path
-                    while target_path.startswith("//"):
-                        target_path = target_path[1:]
-                    environ["PATH_INFO"] = target_path or "/"
-                    environ["QUERY_STRING"] = urlencode(params, doseq=True)
+                for key in ("path", "_path"):
+                    if key in params and params[key]:
+                        target_path = params.pop(key)[0]
+                        if not target_path.startswith("/"):
+                            target_path = "/" + target_path
+                        while target_path.startswith("//"):
+                            target_path = target_path[1:]
+                        environ["PATH_INFO"] = target_path or "/"
+                        environ["QUERY_STRING"] = urlencode(params, doseq=True)
+                        break
             except Exception:
                 pass
 
-        # 2. Fallback to matched path headers if available
+        # Fallback to matched path headers if available
         matched_path = (
             environ.get("HTTP_X_MATCHED_PATH")
             or environ.get("HTTP_X_VERCEL_MATCHED_PATH")
             or environ.get("HTTP_X_FORWARDED_URI")
         )
-        if matched_path and matched_path not in ("/api/index", "/api/index.py") and not query_string.startswith("_path="):
-            environ["PATH_INFO"] = matched_path.split("?")[0]
+        if matched_path and matched_path not in ("/api/index", "/api/index.py"):
+            path_only = matched_path.split("?")[0]
+            if path_only not in ("/", "/api/index"):
+                environ["PATH_INFO"] = path_only
 
         return self.wsgi_app(environ, start_response)
 

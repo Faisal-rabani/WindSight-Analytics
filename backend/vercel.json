@@ -2,9 +2,10 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index?_path=/$1"
+      "source": "/:path*",
+      "destination": "/api/index?path=:path*"
     }
   ]
 }
+
 
