@@ -21,9 +21,16 @@ def create_app(config_name: str = None) -> Flask:
     db.init_app(app)
     cors.init_app(
         app,
-        resources={r"/api/*": {"origins": "*"}},
+        resources={r"/*": {"origins": "*"}},
         supports_credentials=True,
     )
+
+    # Register root / health routes
+    @app.route("/")
+    @app.route("/health")
+    def index():
+        from app.api.routes.health import health_check
+        return health_check()
 
     # Register error handlers
     register_error_handlers(app)
@@ -31,27 +38,36 @@ def create_app(config_name: str = None) -> Flask:
     # Register blueprints
     register_blueprints(app)
 
-    # Ensure tables exist
+    # Ensure tables exist (graceful fallback on read-only environments)
     with app.app_context():
-        # Ensure data directory exists
-        app.config["DATA_DIR"].mkdir(parents=True, exist_ok=True)
-        db.create_all()
+        try:
+            app.config["DATA_DIR"].mkdir(parents=True, exist_ok=True)
+            db.create_all()
+        except Exception as e:
+            logger.warning(f"Database directory/table initialization skipped (read-only environment): {e}")
 
     logger.info(f"Flask initialized in {config_name} mode. DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
     return app
 
 
 def register_blueprints(app: Flask):
-    """Register all API route blueprints."""
+    """Register all API route blueprints with both /api/v1 and /v1 prefixes."""
     from app.api.routes.health import health_bp
     from app.api.routes.forecasts import forecasts_bp
     from app.api.routes.analytics import analytics_bp
     from app.api.routes.actuals import actuals_bp
 
+    # Standard /api/v1 prefix
     app.register_blueprint(health_bp, url_prefix="/api/v1")
     app.register_blueprint(forecasts_bp, url_prefix="/api/v1/forecasts")
     app.register_blueprint(analytics_bp, url_prefix="/api/v1/analytics")
     app.register_blueprint(actuals_bp, url_prefix="/api/v1/actuals")
+
+    # Fallback /v1 prefix if a proxy or rewrite strips /api
+    app.register_blueprint(health_bp, url_prefix="/v1", name="health_alt")
+    app.register_blueprint(forecasts_bp, url_prefix="/v1/forecasts", name="forecasts_alt")
+    app.register_blueprint(analytics_bp, url_prefix="/v1/analytics", name="analytics_alt")
+    app.register_blueprint(actuals_bp, url_prefix="/v1/actuals", name="actuals_alt")
 
 
 def register_error_handlers(app: Flask):
