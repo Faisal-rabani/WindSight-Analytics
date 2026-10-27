@@ -32,7 +32,16 @@ def create_app(config_name: str = None) -> Flask:
     @app.route("/api/index")
     @app.route("/api/index.py")
     def index():
+        from flask import request, jsonify
         from app.api.routes.health import health_check
+        if request.args.get("debug") == "1":
+            return jsonify({
+                "PATH_INFO": request.environ.get("PATH_INFO"),
+                "QUERY_STRING": request.environ.get("QUERY_STRING"),
+                "REQUEST_URI": request.environ.get("REQUEST_URI"),
+                "RAW_URI": request.environ.get("RAW_URI"),
+                "headers": dict(request.headers),
+            })
         return health_check()
 
     # Register error handlers
