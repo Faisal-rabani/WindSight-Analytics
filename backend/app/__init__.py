@@ -32,16 +32,7 @@ def create_app(config_name: str = None) -> Flask:
     @app.route("/api/index")
     @app.route("/api/index.py")
     def index():
-        from flask import request, jsonify
         from app.api.routes.health import health_check
-        if request.args.get("debug") == "1":
-            return jsonify({
-                "PATH_INFO": request.environ.get("PATH_INFO"),
-                "QUERY_STRING": request.environ.get("QUERY_STRING"),
-                "REQUEST_URI": request.environ.get("REQUEST_URI"),
-                "RAW_URI": request.environ.get("RAW_URI"),
-                "headers": dict(request.headers),
-            })
         return health_check()
 
     # Register error handlers
@@ -58,8 +49,45 @@ def create_app(config_name: str = None) -> Flask:
         except Exception as e:
             logger.warning(f"Database directory/table initialization skipped (read-only environment): {e}")
 
+    # Wrap WSGI layer with VercelPathFixMiddleware to seamlessly restore paths on Vercel
+    app.wsgi_app = VercelPathFixMiddleware(app.wsgi_app)
+
     logger.info(f"Flask initialized in {config_name} mode. DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
     return app
+
+
+class VercelPathFixMiddleware:
+    """
+    WSGI middleware that restores original PATH_INFO on Vercel.
+    When vercel.json rewrites /:path* to /api/index?path=:path*,
+    this middleware extracts the real requested path, restores PATH_INFO,
+    and cleans up QUERY_STRING.
+    """
+    def __init__(self, wsgi_app):
+        self.wsgi_app = wsgi_app
+
+    def __call__(self, environ, start_response):
+        from urllib.parse import parse_qs, urlencode, unquote
+
+        qs = environ.get("QUERY_STRING", "")
+        if qs:
+            try:
+                params = parse_qs(qs, keep_blank_values=True)
+                for key in ("path", "_path"):
+                    if key in params and params[key]:
+                        raw_target = params.pop(key)[0]
+                        target_path = unquote(raw_target)
+                        if not target_path.startswith("/"):
+                            target_path = "/" + target_path
+                        while target_path.startswith("//"):
+                            target_path = target_path[1:]
+                        environ["PATH_INFO"] = target_path or "/"
+                        environ["QUERY_STRING"] = urlencode(params, doseq=True)
+                        break
+            except Exception:
+                pass
+
+        return self.wsgi_app(environ, start_response)
 
 
 def register_blueprints(app: Flask):
