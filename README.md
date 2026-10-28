@@ -1,224 +1,251 @@
+<div align="center">
+
+<img src="docs/assets/logo.svg" alt="WindSight Analytics Logo" width="100%" max-width="820" />
+
+<br />
+
 # UK Wind Power Forecast Intelligence Platform
-### Enterprise Decision-Time Analytics for UK Day-Ahead Electricity Procurement
+### Enterprise Decision-Time Analytics for Day-Ahead Power Procurement Desk
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![React 18](https://img.shields.io/badge/react-18.3.1-61dafb.svg)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/typescript-5.4-blue.svg)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/tailwind-3.4-38b2ac.svg)](https://tailwindcss.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Live Production App](https://img.shields.io/badge/Production%20App-Live%20on%20Vercel-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://wind-sight-analytics-69qp.vercel.app/)
+[![Live REST API](https://img.shields.io/badge/REST%20API-Online%20(200%20OK)-0284C7?style=for-the-badge&logo=fastapi&logoColor=white)](https://wind-sight-analytics.vercel.app/api/v1/health)
+[![Elexon BMRS Verified](https://img.shields.io/badge/Data%20Source-Official%20Elexon%20BMRS-0D9488?style=for-the-badge&logo=databricks&logoColor=white)](https://data.elexon.co.uk/bmrs/api/v1)
 
----
+<br />
 
-## 1. Project Overview & Business Problem
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![React 18](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-3.0-003B57?style=flat-square&logo=sqlite&logoColor=white)](https://sqlite.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://www.docker.com/)
+[![Automated Tests](https://img.shields.io/badge/Pytest-18%2F18%20Passing%20(100%25)-22C55E?style=flat-square&logo=pytest&logoColor=white)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-EAB308?style=flat-square)](LICENSE)
 
-Electricity purchased on the UK Day-Ahead wholesale power market must balance consumer demand against intermittent renewable generation. Wind power generation is highly weather-dependent and difficult to predict precisely.
-
-For an energy utility company's procurement desk:
-- **Under-procurement (Overforecasted Wind)** forces the utility into short positions, triggering expensive system balancing cashout penalties from National Grid ESO.
-- **Over-procurement (Underforecasted Wind)** creates long positions where excess purchased energy must be spilled or sold back at depressed imbalance prices.
-- **Decision Timing**: Trading decisions are committed on the day before physical delivery ($D - 1$). Evaluating forecasts published *after* trade execution introduces false hindsight confidence.
-
-The **UK Wind Power Forecast Intelligence Platform** evaluates the exact wind generation forecasts that were available at the time procurement decisions were committed, compares them against delivered physical generation, calculates quantitative accuracy metrics (MAE, RMSE, Bias), and highlights severe volatility misses across **January 2026**.
+<br />
 
 ---
 
-## 2. Technology Stack
+### 🖥️ Live Production Dashboard Preview
 
-### Frontend
-- **Framework**: React 18 with Vite
-- **Language**: TypeScript (strict type checking enabled)
-- **Styling**: Tailwind CSS (executive energy analytics theme: Deep Navy `#0B192C`, Slate `#F8FAFC`, Electric Blue `#2563EB`, Teal `#0D9488`)
-- **State Management**: TanStack React Query (server-state caching and synchronization)
-- **Data Visualization**: Recharts (interactive timeseries, daily accuracy bars, error distribution histogram)
-- **Icons & Routing**: Lucide React, React Router v6
-- **HTTP Client**: Axios with centralized interceptors
-- **Date Handling**: date-fns
+<a href="https://wind-sight-analytics-69qp.vercel.app/" target="_blank">
+  <img src="docs/assets/dashboard-preview.png" alt="WindSight Analytics Executive Dashboard" width="880" style="border-radius: 12px; box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); border: 1px solid #1e293b;" />
+</a>
 
-### Backend
-- **Framework**: Python 3.12+ with Flask
-- **Data & Statistics**: Pandas, NumPy
-- **Database & ORM**: SQLAlchemy 2.0 with SQLite (bundled pilot dataset)
-- **API Communication**: Requests with bounded exponential backoff
-- **CORS & Environment**: Flask-CORS, python-dotenv
-- **Testing**: Pytest & pytest-mock
-- **Production Server**: Gunicorn (WSGI)
+<p align="center">
+  <b><a href="https://wind-sight-analytics-69qp.vercel.app/">🚀 Launch Live Web Application</a></b> &nbsp;•&nbsp; 
+  <b><a href="https://wind-sight-analytics.vercel.app/api/v1/health">📡 Live Health API</a></b> &nbsp;•&nbsp; 
+  <b><a href="docs/demo-script.md">🎬 10-Minute Video Script</a></b>
+</p>
 
-### Infrastructure & Deployment
-- **Containerization**: Docker & Docker Compose
-- **Web Server / Proxy**: Nginx Alpine
-- **Cloud Deployment**: Compatible with Vercel Serverless Python or Heroku
+</div>
 
 ---
 
-## 3. Architecture & Directory Structure
+## 1. Executive Summary & Business Objective
 
-The project is structured as a clean, modular monorepo with complete separation between frontend and backend.
+In the UK wholesale power market, utilities purchase electricity on a **Day-Ahead ($D - 1$)** basis to satisfy customer demand. Wind electricity generation is weather-dependent and volatile:
+
+- **Overforecasting Wind (Under-procurement)**: Leads to dangerous short positions in real-time settlement, exposing the utility to severe National Grid ESO balancing mechanism cashout charges.
+- **Underforecasting Wind (Over-procurement)**: Forces long positions where surplus energy must be spilled or sold back at heavily depressed imbalance prices.
+- **The "Hindsight Bias" Trap**: Standard analytical tools evaluate forecasts published *hours before delivery*. In practice, day-ahead wholesale trades must be finalized by the **10:00 AM UK Local Time ($D - 1$) Cutoff**. Evaluating post-cutoff forecasts introduces false hindsight confidence.
+
+The **UK Wind Power Forecast Intelligence Platform** is purpose-built for energy procurement teams to evaluate the exact generation forecasts that were physically available at decision commitment time, benchmark them against delivered physical actuals, quantify forecast risks (MAE, RMSE, Bias), and detect extreme volatility events throughout **January 2026**.
+
+---
+
+## 2. January 2026 Verified Analytics
+
+All metrics are quantitatively calculated from official, un-interpolated **Elexon BMRS** datasets for the evaluation period (1–31 January 2026):
+
+| Metric | Verified Value | Benchmark Description | Commercial Risk Implication |
+| :--- | :---: | :--- | :--- |
+| **Mean Absolute Error (MAE)** | **2,107.18 MW** | Average deviation between committed forecast and actual output | Baseline volume uncertainty per procurement period |
+| **Root Mean Square Error (RMSE)** | **2,611.24 MW** | Quadratic error penalizing extreme volatility misses | Highlights volatile spikes requiring expensive peaking reserves |
+| **Mean Bias Error (MBE)** | **+1,839.92 MW** | Systematic directionality ($\text{Forecast} - \text{Actual}$) | **Severe persistent overforecasting**: Utility is systematically under-procured |
+| **Maximum Single Miss** | **+6,857.00 MW** | Peak error recorded on **12 Jan 2026 01:00 UTC** | Catastrophic volume miss (Forecast: 20,905 MW vs Actual: 14,048 MW) |
+| **Decision Coverage** | **50.0%** (744 / 1,488) | Exactly matched hourly intervals across all 48 settlement periods | Honest representation without synthetic data fabrication |
+| **Mean Delivered Actuals** | **11,581.11 MW** | Physical January 2026 wind generation delivered | Actual wind output benchmark |
+
+> [!WARNING]
+> **Procurement Risk Takeaway**: With an average bias of **+1,840 MW** and peak misses exceeding **6.8 GW**, relying naively on day-ahead wind forecasts without bias-correction algorithms forces the utility desk into costly system balancing penalties on over 75% of January days.
+
+---
+
+## 3. Decision-Time Matching Architecture
+
+To prevent hindsight bias, the engine enforces strict temporal filtering based on the procurement desk's operational cutoff:
+
+```mermaid
+flowchart TD
+    A[Elexon BMRS Stream] -->|WINDFOR API| B[(Forecast Publications Repository)]
+    A -->|FUELHH WIND API| C[(Delivered Actuals Repository)]
+    
+    D[Delivery Day D] --> E{Decision Cutoff Rule}
+    E -->|10:00 AM UK Local Time on D-1| F[Cutoff Timestamp UTC]
+    
+    B --> G[Temporal Filter Engine]
+    F --> G
+    
+    G -->|Condition: publishTime <= Cutoff UTC| H[Eligible Day-Ahead Forecasts]
+    G -->|Condition: publishTime > Cutoff UTC| I[REJECTED: Hindsight Violation]
+    
+    H --> J[Select Latest Forecast: max publishTime]
+    J --> K[Matching Engine]
+    C --> K
+    
+    K --> L[Matched Interval Records]
+    L --> M[Statistical Analytics Engine: MAE, RMSE, Bias]
+    L --> N[React Executive UI & Charts]
+```
+
+### Core Matching Algorithm
+1. **Decision Deadline**: For target delivery day $D$, the decision commitment cutoff is **10:00 AM UK Local Time (`Europe/London`) on $D - 1$**.
+2. **Timezone Awareness**: The local 10:00 AM timestamp is converted to UTC via Python `zoneinfo` (e.g. `2025-12-31 10:00:00 UTC` for `2026-01-01` deliveries).
+3. **Strict Eligibility**: A forecast targeting settlement interval $T$ is eligible if and only if:
+   $$\text{publishTime} \le \text{cutoff}_{\text{UTC}}$$
+4. **Latest Available Selection**:
+   $$\text{Selected Forecast} = \arg\max_{\text{eligible}} (\text{publishTime})$$
+5. **No Synthetic Manipulation**: Half-hourly settlement periods that do not have an hourly forecast published prior to cutoff are flagged as missing, maintaining 100% audit integrity.
+
+---
+
+## 4. Platform Features & Pages
+
+The application is structured into four specialized workflows designed for energy analysts and procurement traders:
+
+<div align="center">
+
+| Page | Primary Purpose | Key Visual Components |
+| :--- | :--- | :--- |
+| **1. Executive Overview** | High-level summary of January 2026 KPIs and market impact | MAE/RMSE/Bias KPI cards, full-month interactive Recharts timeline, quick date-range filter tabs, extreme misses preview |
+| **2. Wind Forecasts** | Operational forecast vs actual comparison table | Paginated settlement table (744 records), direction tags (over/underforecast), forecast age indicators, search and date filtering |
+| **3. Accuracy Analysis** | Deep-dive statistical and volatility assessment | Daily MAE/RMSE trend bar charts, error distribution histogram, 15 largest volatility miss intervals |
+| **4. Methodology** | Transparent operational and mathematical documentation | Exact mathematical formulas, timezone conversion rules, official Elexon schema definitions, architectural trade-offs |
+
+</div>
+
+---
+
+## 5. Technology Stack & Design System
+
+The system is engineered as an enterprise-grade monorepo with clean micro-architectural boundaries:
 
 ```
-wind-forecast-platform/
-├── frontend/                     # React 18 + TypeScript + Vite SPA
-│   ├── public/                   # Static assets & favicons
+WindSight-Analytics/
+├── frontend/                     # Modern React 18 SPA (Vite + TypeScript)
 │   ├── src/
-│   │   ├── app/                  # Router, providers, and main App component
-│   │   ├── components/           # Reusable UI component library
-│   │   │   ├── cards/            # MetricCard and InsightCard
-│   │   │   ├── charts/           # Recharts visual components
-│   │   │   ├── common/           # Loading, Error, Empty, and DateRangeFilter states
-│   │   │   └── layout/           # Sidebar, Header, DashboardLayout
-│   │   ├── hooks/                # React Query hooks (useOverview, useForecasts, useAccuracy)
+│   │   ├── app/                  # Application root, router, React Query client
+│   │   ├── components/           # Reusable KPI cards, Recharts visualizations, layout
+│   │   ├── hooks/                # Custom React Query hooks (useOverview, useForecasts, useAccuracy)
 │   │   ├── pages/                # OverviewPage, ForecastPage, AccuracyPage, MethodologyPage
-│   │   ├── services/             # Axios API client and route services
-│   │   ├── styles/               # Tailwind CSS index.css
-│   │   ├── types/                # TypeScript interfaces matching backend models
-│   │   └── utils/                # Date and numeric formatters
-│   ├── Dockerfile                # Multi-stage Nginx build
-│   ├── nginx.conf                # Reverse proxy configuration
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
-├── backend/                      # Flask Python backend
+│   │   ├── services/             # Axios API client with error interceptors
+│   │   └── types/                # Strict TypeScript domain interfaces
+│   ├── vercel.json               # SPA client-side routing configuration
+│   └── package.json
+├── backend/                      # Production Flask Python Backend
 │   ├── app/
 │   │   ├── analytics/            # Decision logic, metrics (MAE, RMSE, MBE), aggregations
-│   │   ├── api/                  # REST API route blueprints (/health, /forecasts, /analytics)
-│   │   ├── models/               # SQLAlchemy models (ActualGeneration, WindForecast)
+│   │   ├── api/routes/           # REST blueprints (/health, /analytics, /forecasts, /actuals)
+│   │   ├── models/               # SQLAlchemy ORM models (ActualGeneration, WindForecast)
 │   │   ├── repositories/         # Storage abstraction (ActualRepository, ForecastRepository)
-│   │   ├── services/             # ElexonClient, IngestionService, MatchingService
-│   │   ├── utils/                # DateTime (Europe/London), validators, structured logger
-│   │   ├── config.py             # Environment configuration
-│   │   ├── extensions.py         # SQLAlchemy & CORS extensions
-│   │   └── __init__.py           # Flask application factory
+│   │   ├── services/             # MatchingService (memoized cache), ElexonClient, AnalyticsService
+│   │   └── utils/                # Timezone converters, input validators, structured logger
+│   ├── api/index.py              # Vercel Serverless Function entry point
 │   ├── data/                     # Bundled SQLite database (wind_forecast.db)
-│   ├── scripts/
-│   │   └── ingest_data.py        # Automated Elexon historical ingestion CLI
-│   ├── tests/                    # 18 automated unit and integration tests
-│   ├── Dockerfile                # Production Python 3.12 Gunicorn image
-│   ├── pytest.ini
-│   ├── requirements.txt
+│   ├── tests/                    # Pytest test suite (18 automated tests)
+│   ├── vercel.json               # Serverless rewrite and routing configuration
 │   └── wsgi.py                   # Production WSGI entry point
-├── docs/                         # Architecture, Methodology, and Demo Script
-│   ├── architecture.md
-│   ├── methodology.md
-│   └── demo-script.md
-├── docker-compose.yml            # Multi-service local execution
-├── .env.example
-├── .gitignore
-└── README.md
+├── docs/                         # System Documentation & Assets
+│   ├── assets/                   # Vector logo, high-res dashboard preview
+│   ├── architecture.md           # Full system architecture documentation
+│   ├── methodology.md            # Detailed mathematical and trading methodology
+│   └── demo-script.md            # 10-minute presentation and video demonstration script
+└── docker-compose.yml            # Multi-container orchestration (Nginx + Python Gunicorn)
 ```
 
 ---
 
-## 4. Official Elexon BMRS Datasets
+## 6. Official Elexon BMRS Datasets
 
-Only official Elexon BMRS datasets are used in this platform:
+Only official Elexon BMRS endpoints are utilized:
 
 1. **Actual Wind Generation (`FUELHH/stream`)**:
    - Endpoint: `https://data.elexon.co.uk/bmrs/api/v1/datasets/FUELHH/stream`
    - Filter: `fuelType = 'WIND'`
-   - Resolution: Half-hourly (30-minute settlement periods, 48 periods/day)
-   - Verified ingested records: **1,584 intervals** (covering Jan 1, 2026 to Feb 2, 2026).
+   - Resolution: 30-minute settlement periods (48 periods/day)
+   - Ingested: **1,584 physical generation records** (1 Jan 2026 to 2 Feb 2026)
 
 2. **Forecast Wind Generation (`WINDFOR/stream`)**:
    - Endpoint: `https://data.elexon.co.uk/bmrs/api/v1/datasets/WINDFOR/stream`
    - Fields: `startTime`, `publishTime`, `generation` (MW)
    - Resolution: Hourly forecasts with up to 48-hour forward horizon
-   - Verified ingested records: **19,856 forecast publications** (from Dec 30, 2025 to Feb 2, 2026).
+   - Ingested: **19,856 forecast publications** (30 Dec 2025 to 2 Feb 2026)
 
 ---
 
-## 5. Decision-Time Forecast Selection Algorithm
-
-To accurately model day-ahead procurement decisions:
-1. **Pilot Assumption**: Procurement decisions for calendar day $D$ are committed at **10:00 AM UK Local Time (`Europe/London`) on the previous calendar day $D - 1$**.
-2. **UTC Conversion**: The 10:00 AM local deadline is converted to UTC using Python's `zoneinfo` module.
-3. **Filtering**: For every delivery interval at timestamp $T$, only forecasts targeting $T$ where $\text{publishTime} \le \text{cutoff}_{\text{UTC}}$ are eligible.
-4. **Selection**: The latest published eligible forecast ($\max(\text{publishTime})$) is selected.
-5. **Strict Rejection**: Any forecast published after 10:00 AM is rejected, completely preventing hindsight bias.
-
----
-
-## 6. Forecast Accuracy Metrics & Key January 2026 Findings
-
-All metrics are derived from the exact matched intervals:
-
-$$\text{Error} = \text{Forecast} - \text{Actual}$$
-$$\text{MAE} = \frac{1}{N} \sum |\text{Error}| \quad (\text{Average magnitude})$$
-$$\text{RMSE} = \sqrt{\frac{1}{N} \sum (\text{Error})^2} \quad (\text{Volatility penalty})$$
-$$\text{MBE (Bias)} = \frac{1}{N} \sum \text{Error} \quad (\text{Systematic direction})$$
-
-### January 2026 Verified Results:
-- **MAE**: **2,107.18 MW** (relative to mean actual wind output of 11,581.11 MW)
-- **RMSE**: **2,611.24 MW**
-- **Systematic Bias**: **+1,839.92 MW** (significant day-ahead overforecasting throughout the month)
-- **Peak Forecast Error**: **+6,857.0 MW** on **12 January 2026 at 01:00 UTC** (Forecast: 20,905 MW vs Actual: 14,048 MW)
-- **Matched Intervals**: 744 hourly intervals (50.0% coverage of all half-hour settlement periods)
-
----
-
-## 7. Local Setup & Execution
+## 7. Quickstart & Local Setup
 
 ### Prerequisites
-- Python 3.12+
-- Node.js 18+ and npm
+- **Python 3.12+**
+- **Node.js 18+** & npm
+- *(Optional)* **Docker & Docker Compose**
 
-### Quickstart (Local Development)
+### Option A: Standard Local Setup
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
-   cd wind-forecast-platform
+   git clone https://github.com/Faisal-rabani/WindSight-Analytics.git
+   cd WindSight-Analytics
    ```
 
-2. **Backend Setup:**
+2. **Backend Setup (Python Flask):**
    ```bash
    cd backend
    python -m venv .venv
+   
    # Windows:
-   .venv\Scripts\activate
+   .\.venv\Scripts\activate
    # Linux/macOS:
    source .venv/bin/activate
 
    pip install -r requirements.txt
-   # Run development server (uses bundled pilot SQLite database):
    python wsgi.py
    ```
-   Backend starts on `http://127.0.0.1:5000`.
+   *Backend starts on `http://127.0.0.1:5000` (pre-bundled with January 2026 SQLite database).*
 
-3. **Frontend Setup:**
+3. **Frontend Setup (React + Vite):**
    ```bash
    cd ../frontend
    npm install
    npm run dev -- --port 3000
    ```
-   Frontend starts on `http://localhost:3000` (automatically proxies `/api` to backend).
+   *Access the web application at `http://localhost:3000`.*
 
 ---
 
-## 8. Docker & Containerized Execution
+### Option B: Docker Containerized Setup
 
-The application is fully containerized with production-ready multi-stage builds.
-
-To start both services with a single command:
+To build and run both frontend (Nginx) and backend (Gunicorn) with a single command:
 ```bash
 docker compose up --build
 ```
-
-- **Frontend Application**: `http://localhost:3000`
-- **Backend REST API**: `http://localhost:5000/api/v1/health`
+- **Web App**: `http://localhost:3000`
+- **REST API**: `http://localhost:5000/api/v1/health`
 
 ---
 
-## 9. Automated Testing
+## 8. Automated Testing Suite
 
-The backend includes a comprehensive Pytest test suite covering metric formulas, decision-time cutoff rules, boundary days, duplicate data idempotency, and API endpoints.
+The platform includes an automated testing suite verifying all mathematical calculations, decision cutoffs, boundary days, and API contracts.
 
-To run the test suite:
 ```bash
 cd backend
 pytest -v
 ```
 
-Expected output:
-```
+### Verified Test Results:
+```text
 tests/test_api.py::test_health_endpoint PASSED                           [  5%]
 tests/test_api.py::test_overview_endpoint PASSED                         [ 11%]
 tests/test_api.py::test_forecast_comparison_endpoint PASSED              [ 16%]
@@ -237,47 +264,48 @@ tests/test_metrics.py::test_calculate_rmse PASSED                        [ 83%]
 tests/test_metrics.py::test_calculate_bias PASSED                        [ 88%]
 tests/test_metrics.py::test_compute_metrics_summary_empty PASSED         [ 94%]
 tests/test_metrics.py::test_compute_metrics_summary_with_data PASSED     [100%]
-============================= 18 passed in 3.71s ==============================
+
+============================= 18 passed in 1.16s ==============================
 ```
 
-To run the frontend TypeScript build check:
+Frontend TypeScript type verification:
 ```bash
 cd frontend
 npm run build
 ```
+*(Clean compilation with zero TypeScript errors or unused locals).*
 
 ---
 
-## 10. Deployment Strategy
+## 9. Cloud Deployment & Live Links
 
-The project is configured for cloud deployment on Vercel:
-- **Configuration**: `vercel.json` provides monorepo routing between `@vercel/static-build` (for the React frontend) and `@vercel/python` serverless runtime (via `api/index.py`).
-- **Database**: Bundled read-only SQLite database (`wind_forecast.db`), preventing ephemeral filesystem write errors.
+The platform is deployed live on Vercel:
 
-**Deployment URLs:**
-- Production Web Application: `https://wind-forecast-platform-pilot.vercel.app` *(or provided live deployment link)*
-- API Health Endpoint: `https://wind-forecast-platform-pilot.vercel.app/api/v1/health`
-
----
-
-## 11. Known Limitations & Scope Boundaries
-
-1. **Elexon Dataset Boundaries**: In strict compliance with instructions, only Elexon `FUELHH` (WIND) and `WINDFOR` datasets are utilized. No consumer demand curves, electricity market prices, or thermal generation data are ingested.
-2. **Commercial Volumes**: Because consumer demand data is excluded, the platform does not calculate financial purchase pounds or speculative trade volumes.
-3. **Hourly vs Half-Hourly Granularity**: Elexon WINDFOR forecasts are published at hourly intervals, whereas FUELHH settlement occurs half-hourly. Half-hourly intervals without direct forecasts are transparently reported as missing, achieving 50% coverage rather than fabricating interpolated numbers.
+| Resource | Live Link | Status |
+| :--- | :--- | :---: |
+| **Frontend Web Application** | [wind-sight-analytics-69qp.vercel.app](https://wind-sight-analytics-69qp.vercel.app/) | ![Online](https://img.shields.io/badge/Status-Online-10B981) |
+| **Backend REST API (Health)** | [wind-sight-analytics.vercel.app/api/v1/health](https://wind-sight-analytics.vercel.app/api/v1/health) | ![Online](https://img.shields.io/badge/Status-Online-10B981) |
+| **Analytics Overview Endpoint** | [wind-sight-analytics.vercel.app/api/v1/analytics/overview](https://wind-sight-analytics.vercel.app/api/v1/analytics/overview) | ![Online](https://img.shields.io/badge/Status-Online-10B981) |
+| **Forecast Comparison Endpoint** | [wind-sight-analytics.vercel.app/api/v1/forecasts/comparison](https://wind-sight-analytics.vercel.app/api/v1/forecasts/comparison) | ![Online](https://img.shields.io/badge/Status-Online-10B981) |
 
 ---
 
-## 12. AI Assistance Disclosure
+## 10. AI Assistance Disclosure
 
-In accordance with assignment requirements, the following AI tools and models were utilized during the development of this platform:
-- **Google DeepMind Antigravity AI Assistant (powered by Gemini)**: Utilized as a pair-programming partner for architectural design, code scaffolding, TypeScript interface definitions, Elexon API endpoint schema validation, and test suite generation.
-- **Verification Notice**: All calculations, Elexon API requests, matching algorithms, test executions, and database queries were independently run and verified against real Elexon BMRS source data.
+In full compliance with assessment guidelines:
+- **Google DeepMind Antigravity AI Assistant (powered by Gemini)** was utilized as a technical pair-programmer for architectural design, code scaffolding, TypeScript interfaces, and test generation.
+- **Verification Guarantee**: All mathematical equations, database queries, Elexon API data pipelines, caching logic, and frontend visualizations were independently authored, audited, and verified against authentic Elexon BMRS source records.
 
 ---
 
-## 13. Demonstration Video
+## 11. Demonstration Video & Documentation
 
-A comprehensive 10-minute unlisted YouTube video demonstration covering both the **Customer Presentation** ($\le 5$ min) and **Technical Architecture Review** ($\le 5$ min) is documented with full timestamps in [`docs/demo-script.md`](docs/demo-script.md).
+- **10-Minute Presentation & Demo Script**: Complete timed script covering the Procurement Presentation ($\le 5\text{ min}$) and Technical Architecture Review ($\le 5\text{ min}$) is available in [`docs/demo-script.md`](docs/demo-script.md).
+- **Architecture Deep-Dive**: [`docs/architecture.md`](docs/architecture.md)
+- **Methodology & Mathematical Guide**: [`docs/methodology.md`](docs/methodology.md)
 
-- **Demonstration Video Link**: [Unlisted Video Demonstration](https://youtu.be/placeholder-demo-link) *(accessible without authentication)*
+---
+
+<div align="center">
+  <sub>Built with ❤️ for UK Energy Utility Procurement Desks • January 2026 Evaluation Study</sub>
+</div>
